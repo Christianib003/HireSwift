@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import FormInput from '../../components/common/FormInput';
+import { supabase } from '../../supabase/supabaseClient';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -10,6 +12,7 @@ const Register = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,7 +21,6 @@ const Register = () => {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -54,11 +56,52 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Handle form submission
-      console.log('Form submitted:', formData);
+      setIsLoading(true);
+      try {
+        // 1. Sign up the user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        // 2. Create a profile record in the profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              full_name: formData.fullName,
+              email: formData.email,
+            }
+          ]);
+
+        if (profileError) throw profileError;
+
+        // Success! Redirect to a success page or login
+        navigate('/login', { 
+          state: { 
+            message: 'Registration successful! Please check your email to verify your account.' 
+          }
+        });
+
+      } catch (error) {
+        setErrors(prev => ({
+          ...prev,
+          submit: error.message
+        }));
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -98,6 +141,7 @@ const Register = () => {
               onChange={handleChange}
               error={errors.fullName}
               placeholder="Enter your full name"
+              disabled={isLoading}
             />
 
             <FormInput
@@ -109,6 +153,7 @@ const Register = () => {
               onChange={handleChange}
               error={errors.email}
               placeholder="Enter your email"
+              disabled={isLoading}
             />
 
             <FormInput
@@ -120,6 +165,7 @@ const Register = () => {
               onChange={handleChange}
               error={errors.password}
               placeholder="Enter your password"
+              disabled={isLoading}
             />
 
             <FormInput
@@ -131,18 +177,35 @@ const Register = () => {
               onChange={handleChange}
               error={errors.confirmPassword}
               placeholder="Confirm your password"
+              disabled={isLoading}
             />
+
+            {errors.submit && (
+              <div className="mb-4 p-3 rounded bg-red-50 text-red-500 text-sm">
+                {errors.submit}
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || isLoading}
               className={`w-full py-2 rounded-lg text-white font-medium mt-6 
-                ${isFormValid() 
+                ${isFormValid() && !isLoading
                   ? 'bg-primary hover:opacity-90' 
                   : 'bg-primary/50 cursor-not-allowed'
-                }`}
+                } relative`}
             >
-              Sign Up
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing up...
+                </span>
+              ) : (
+                'Sign Up'
+              )}
             </button>
           </form>
 
