@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { NAV_LINKS } from '../../constants/navigation';
+import { PUBLIC_NAVIGATION } from '../../constants/navigation';
 
 const Navbar = () => {
   return (
@@ -10,17 +10,22 @@ const Navbar = () => {
         </Link>
         
         <div className="flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
+          {PUBLIC_NAVIGATION.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`nav-link ${
-                link.isRegister ? 'bg-register text-primary pill-button' : ''
-              }`}
+              className="nav-link"
             >
               {link.label}
             </Link>
           ))}
+          <Link to="/login" className="nav-link">Login</Link>
+          <Link 
+            to="/register" 
+            className="nav-link bg-register text-primary pill-button"
+          >
+            Register
+          </Link>
         </div>
       </div>
     </nav>

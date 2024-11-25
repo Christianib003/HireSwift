@@ -50,47 +50,63 @@ const Login = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Sign in user
+        const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
-        if (error) throw error;
+        if (signInError) throw signInError;
 
-        if (data?.user) {
-          // Check if user has a role
+        if (authData?.user) {
+          console.log('Auth successful:', authData);
+          
+          // Get user's role
           const [
             { data: talentData },
             { data: hmData }
           ] = await Promise.all([
-            supabase.from('talents').select('id').eq('user_id', data.user.id),
-            supabase.from('hiring_managers').select('id').eq('user_id', data.user.id)
+            supabase.from('talents').select('*').eq('user_id', authData.user.id),
+            supabase.from('hiring_managers').select('*').eq('user_id', authData.user.id)
           ]);
 
+          console.log('Role check:', { talentData, hmData });
+
+          const userName = authData.user.user_metadata?.full_name;
+
           if (talentData?.length > 0) {
-            navigate('/home', { 
+            console.log('Navigating to explore as talent');
+            navigate('/explore', { 
+              replace: true,
               state: { 
-                userName: data.user.user_metadata.full_name,
+                userName,
                 userStatus: 'talent'
               }
             });
           } else if (hmData?.length > 0) {
-            navigate('/home', { 
+            console.log('Navigating to jobs as hiring manager');
+            navigate('/jobs', { 
+              replace: true,
               state: { 
-                userName: data.user.user_metadata.full_name,
+                userName,
                 userStatus: 'hiring_manager'
               }
             });
           } else {
-            // User needs to select a role
-            navigate('/select-status');
+            console.log('Navigating to status selection');
+            navigate('/select-status', { 
+              replace: true,
+              state: { 
+                userName
+              }
+            });
           }
         }
-
       } catch (error) {
+        console.error('Login error:', error);
         setErrors(prev => ({
           ...prev,
-          submit: error.message
+          submit: error.message || 'Failed to login. Please try again.'
         }));
       } finally {
         setIsLoading(false);
@@ -98,13 +114,8 @@ const Login = () => {
     }
   };
 
-  const isFormValid = () => {
-    return formData.email && formData.password;
-  };
-
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center relative overflow-hidden">
-      {/* Background shapes */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-secondary-dark/30 transform -rotate-12" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full bg-secondary-dark/30 transform rotate-12" />
@@ -156,12 +167,9 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={!isFormValid() || isLoading}
+              disabled={isLoading}
               className={`w-full py-2 rounded-lg text-white font-medium mt-6 
-                ${isFormValid() && !isLoading
-                  ? 'bg-primary hover:opacity-90' 
-                  : 'bg-primary/50 cursor-not-allowed'
-                } relative`}
+                ${!isLoading ? 'bg-primary hover:opacity-90' : 'bg-primary/50 cursor-not-allowed'}`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
