@@ -13,7 +13,7 @@ const Welcome = () => {
         
         <div className="flex gap-4 flex-wrap justify-center">
           <Link 
-            to="/get-started" 
+            to="/register" 
             className="pill-button bg-primary text-text"
           >
             Get Started

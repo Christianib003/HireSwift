@@ -11,6 +11,10 @@ export default {
         background: '#2c1338',
         text: '#fff3f2',
         register: '#fce5d8',
+        secondary: '#6b5a74',
+        'secondary-dark': '#5a4961',
+        dark: '#412a4c',
+        white: '#fefbfa',
       }
     },
   },

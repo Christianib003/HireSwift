@@ -1,5 +1,6 @@
 import Welcome from '../pages/Welcome';
 import TempPage from '../pages/TempPage';
+import Register from '../pages/auth/Register';
 
 export const routes = [
   {
@@ -28,8 +29,7 @@ export const routes = [
   },
   {
     path: '/register',
-    element: TempPage,
-    props: { title: 'Register' },
+    element: Register,
   },
   {
     path: '/get-started',
