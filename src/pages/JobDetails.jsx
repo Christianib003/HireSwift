@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabase/supabaseClient';
 import { format } from 'date-fns';
+import { toast } from 'react-toastify';
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -13,6 +14,8 @@ const JobDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [skillMatchRate, setSkillMatchRate] = useState(0);
   const [isTalent, setIsTalent] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [talentId, setTalentId] = useState(null);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -98,6 +101,51 @@ const JobDetails = () => {
     fetchJobDetails();
   }, [id]);
 
+  useEffect(() => {
+    const fetchTalentId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: talent } = await supabase
+          .from('talents')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (talent) {
+          setTalentId(talent.id);
+        }
+      } catch (error) {
+        console.error('Error fetching talent ID:', error);
+      }
+    };
+
+    if (isTalent) {
+      fetchTalentId();
+    }
+  }, [isTalent]);
+
+  const handleApply = async () => {
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .insert([{
+          talent_id: talentId,
+          job_id: id,
+          status: 'active'
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Application submitted successfully!');
+      navigate('/applications');
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast.error('Error submitting application');
+    }
+  };
+
   const renderApplyButton = () => {
     if (!isTalent) return null;
 
@@ -119,13 +167,37 @@ const JobDetails = () => {
 
     return (
       <button
-        onClick={() => {/* Apply logic will go here */}}
+        onClick={() => setShowConfirmation(true)}
         className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
       >
         Apply
       </button>
     );
   };
+
+  // Confirmation Modal
+  const ConfirmationModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-xl font-bold mb-4">Confirm Application</h3>
+        <p className="text-gray-600 mb-6">Are you sure you want to apply for this position?</p>
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={() => setShowConfirmation(false)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleApply}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -200,6 +272,7 @@ const JobDetails = () => {
           {renderApplyButton()}
         </div>
       </div>
+      {showConfirmation && <ConfirmationModal />}
     </div>
   );
 };

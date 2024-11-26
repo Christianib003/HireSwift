@@ -17,6 +17,7 @@ import AdminOrganizations from '../pages/admin/AdminOrganizations';
 import AdminVerifications from '../pages/admin/AdminVerifications';
 import AdminVerificationDetails from '../pages/admin/AdminVerificationDetails';
 import Verifications from '../pages/Verifications';
+import Applications from '../pages/Applications';
 
 // Wrapper components for authenticated routes
 const AuthenticatedJobs = ({ userStatus }) => (
@@ -129,7 +130,11 @@ const routes = [
   },
   {
     path: '/applications',
-    element: () => <AuthenticatedPlaceholder title="My Applications" />
+    element: () => (
+      <AuthenticatedPage>
+        <Applications />
+      </AuthenticatedPage>
+    )
   },
   {
     path: '/verifications',
