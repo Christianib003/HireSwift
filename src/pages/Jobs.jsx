@@ -4,6 +4,46 @@ import { FaSadTear, FaPlus } from 'react-icons/fa';
 import { supabase } from '../supabase/supabaseClient';
 import CreateJobForm from '../components/jobs/CreateJobForm';
 import { toast } from 'react-toastify';
+import { format } from 'date-fns';
+
+const JobCard = ({ job, userStatus }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-xl font-bold text-dark">{job.title}</h3>
+        <span className="text-sm text-gray-500">
+          {format(new Date(job.created_at), 'MMM d, yyyy')}
+        </span>
+      </div>
+      
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-600">Location:</span>
+          <span className="font-medium">{job.location}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-600">Type:</span>
+          <span className="font-medium">{job.employment_type}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-600">Salary:</span>
+          <span className="font-medium">{job.salary_range}</span>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => navigate(`/jobs/${job.id}/details`)}
+          className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+        >
+          Details
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Jobs = ({ userStatus: defaultUserStatus }) => {
   const location = useLocation();
@@ -185,15 +225,13 @@ const Jobs = ({ userStatus: defaultUserStatus }) => {
             <p className="text-xl">There seems to be no jobs to see at the moment.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {jobs.map(job => (
-              <div 
+              <JobCard 
                 key={job.id} 
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="text-xl font-semibold text-dark mb-2">{job.title}</h3>
-                <p className="text-dark/70 mb-4">{job.description}</p>
-              </div>
+                job={job}
+                userStatus={userStatus}
+              />
             ))}
           </div>
         )}
