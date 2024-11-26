@@ -8,6 +8,7 @@ import Home from '../pages/Home';
 import Jobs from '../pages/Jobs';
 import PlaceholderPage from '../pages/PlaceholderPage';
 import AuthenticatedPage from '../pages/auth/AuthenticatedPage';
+import HiringCycles from '../pages/HiringCycles';
 import HiringCycle from '../pages/HiringCycle';
 
 // Wrapper components for authenticated routes
@@ -20,6 +21,12 @@ const AuthenticatedJobs = ({ userStatus }) => (
 const AuthenticatedPlaceholder = ({ title }) => (
   <AuthenticatedPage>
     <PlaceholderPage title={title} />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedHiringCycles = () => (
+  <AuthenticatedPage>
+    <HiringCycles />
   </AuthenticatedPage>
 );
 
@@ -84,10 +91,10 @@ const routes = [
   },
   {
     path: '/hiring-cycles',
-    element: () => <AuthenticatedPlaceholder title="Hiring Cycles" />
+    element: AuthenticatedHiringCycles
   },
   {
-    path: '/hiring-cycles/:id',
+    path: '/hiring-cycles/:id/details',
     element: AuthenticatedHiringCycle
   },
   {
