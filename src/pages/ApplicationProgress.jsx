@@ -254,36 +254,83 @@ const ApplicationProgress = () => {
       const currentStep = steps.find(step => step.applications?.includes(id));
       const nextStep = steps.find(step => step.sequence_order === (currentStep.sequence_order + 1));
 
-      // Check if marks meet minimum pass mark
+      // Get current application to access existing cumulative_marks
+      const { data: currentApp, error: appError } = await supabase
+        .from('applications')
+        .select('cumulative_marks')
+        .eq('id', id)
+        .single();
+
+      if (appError) throw appError;
+
+      // Prepare new cumulative marks array
+      const newCumulativeMarks = [
+        ...(currentApp.cumulative_marks || []),
+        marks
+      ];
+
       if (marks < currentStep.min_pass_mark) {
-        toast.error(`Marks must be at least ${currentStep.min_pass_mark}%`);
-        return;
-      }
-
-      // Update current step - remove from applications and add to passed_applications
-      const { error: currentStepError } = await supabase
-        .from('hiring_cycle_steps')
-        .update({
-          applications: (currentStep.applications || []).filter(appId => appId !== id),
-          passed_applications: [...(currentStep.passed_applications || []), id]
-        })
-        .eq('id', currentStep.id);
-
-      if (currentStepError) throw currentStepError;
-
-      // Update next step - add to applications
-      if (nextStep) {
-        const { error: nextStepError } = await supabase
+        // Failed scenario
+        const { error: failedStepError } = await supabase
           .from('hiring_cycle_steps')
           .update({
-            applications: [...(nextStep.applications || []), id]
+            applications: (currentStep.applications || []).filter(appId => appId !== id),
+            failed_applications: [...(currentStep.failed_applications || []), id]
           })
-          .eq('id', nextStep.id);
+          .eq('id', currentStep.id);
 
-        if (nextStepError) throw nextStepError;
+        if (failedStepError) throw failedStepError;
+
+        // Update application status to failed and add marks
+        const { error: failedAppError } = await supabase
+          .from('applications')
+          .update({
+            status: 'failed',
+            cumulative_marks: newCumulativeMarks
+          })
+          .eq('id', id);
+
+        if (failedAppError) throw failedAppError;
+
+        toast.error(`Failed to meet minimum pass mark of ${currentStep.min_pass_mark}%`);
+      } else {
+        // Passed scenario
+        // Update current step
+        const { error: currentStepError } = await supabase
+          .from('hiring_cycle_steps')
+          .update({
+            applications: (currentStep.applications || []).filter(appId => appId !== id),
+            passed_applications: [...(currentStep.passed_applications || []), id]
+          })
+          .eq('id', currentStep.id);
+
+        if (currentStepError) throw currentStepError;
+
+        // If there's a next step, add application to it
+        if (nextStep) {
+          const { error: nextStepError } = await supabase
+            .from('hiring_cycle_steps')
+            .update({
+              applications: [...(nextStep.applications || []), id]
+            })
+            .eq('id', nextStep.id);
+
+          if (nextStepError) throw nextStepError;
+        }
+
+        // Update application with new marks
+        const { error: updateAppError } = await supabase
+          .from('applications')
+          .update({
+            cumulative_marks: newCumulativeMarks
+          })
+          .eq('id', id);
+
+        if (updateAppError) throw updateAppError;
+
+        toast.success('Marks submitted successfully!');
       }
 
-      toast.success('Marks submitted successfully!');
       window.location.reload();
     } catch (error) {
       console.error('Error submitting marks:', error);
