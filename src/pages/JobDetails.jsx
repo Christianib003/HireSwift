@@ -1,14 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabase/supabaseClient';
 import { format } from 'date-fns';
 
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { userStatus } = location.state || {};
   const [job, setJob] = useState(null);
   const [skills, setSkills] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [skillMatchRate, setSkillMatchRate] = useState(0);
+  const [isTalent, setIsTalent] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: talent } = await supabase
+          .from('talents')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        setIsTalent(!!talent);
+
+        if (talent) {
+          // Get talent's approved verifications
+          const { data: verifications } = await supabase
+            .from('verifications')
+            .select('skill_id')
+            .eq('talent_id', talent.id)
+            .eq('status', 'approved');
+
+          // Get job's required skills
+          const { data: jobData } = await supabase
+            .from('jobs')
+            .select('skills_required')
+            .eq('id', id)
+            .single();
+
+          if (verifications && jobData) {
+            const approvedSkills = verifications.map(v => v.skill_id);
+            const requiredSkills = jobData.skills_required;
+            
+            // Calculate match rate
+            const matchingSkills = requiredSkills.filter(skillId => 
+              approvedSkills.includes(skillId)
+            );
+            
+            const matchRate = (matchingSkills.length / requiredSkills.length) * 100;
+            setSkillMatchRate(matchRate);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+
+    checkUserRole();
+  }, [id]);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -43,6 +97,35 @@ const JobDetails = () => {
 
     fetchJobDetails();
   }, [id]);
+
+  const renderApplyButton = () => {
+    if (!isTalent) return null;
+
+    if (skillMatchRate < 60) {
+      return (
+        <div className="relative group">
+          <button
+            disabled
+            className="px-6 py-2 text-sm font-medium text-white bg-gray-400 rounded-md cursor-not-allowed"
+          >
+            Apply
+          </button>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            You're missing some required verifications
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => {/* Apply logic will go here */}}
+        className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+      >
+        Apply
+      </button>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -107,13 +190,14 @@ const JobDetails = () => {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="flex justify-between items-center mt-8">
           <button
             onClick={() => navigate(-1)}
             className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
           >
-            Back to Jobs
+            Back
           </button>
+          {renderApplyButton()}
         </div>
       </div>
     </div>

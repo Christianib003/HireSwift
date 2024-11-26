@@ -7,28 +7,32 @@ const AdminVerificationDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [verification, setVerification] = useState(null);
+  const [skill, setSkill] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchVerificationDetails = async () => {
       try {
-        const { data, error } = await supabase
+        // Get verification details
+        const { data: verificationData, error: verificationError } = await supabase
           .from('verifications')
-          .select(`
-            *,
-            talent:talent_id (
-              full_name
-            ),
-            skill:skill_id (
-              name,
-              description
-            )
-          `)
+          .select('*')
           .eq('id', id)
           .single();
 
-        if (error) throw error;
-        setVerification(data);
+        if (verificationError) throw verificationError;
+
+        // Get skill details
+        const { data: skillData, error: skillError } = await supabase
+          .from('skills')
+          .select('*')
+          .eq('id', verificationData.skill_id)
+          .single();
+
+        if (skillError) throw skillError;
+
+        setVerification(verificationData);
+        setSkill(skillData);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Error fetching verification details');
@@ -73,7 +77,7 @@ const AdminVerificationDetails = () => {
     );
   }
 
-  if (!verification) return null;
+  if (!verification || !skill) return null;
 
   return (
     <div className="min-h-screen bg-[#fff3f2] p-6">
@@ -84,14 +88,14 @@ const AdminVerificationDetails = () => {
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium mb-2">Talent</h3>
-                <p className="text-gray-700">{verification.talent?.full_name}</p>
+                <h3 className="text-lg font-medium mb-2">Talent ID</h3>
+                <p className="text-gray-700">{verification.talent_id}</p>
               </div>
 
               <div>
                 <h3 className="text-lg font-medium mb-2">Skill</h3>
-                <p className="text-gray-700 font-medium">{verification.skill?.name}</p>
-                <p className="text-gray-600 mt-2">{verification.skill?.description}</p>
+                <p className="text-gray-700 font-medium">{skill.name}</p>
+                <p className="text-gray-600 mt-2">{skill.description}</p>
               </div>
 
               {verification.doc_url && (

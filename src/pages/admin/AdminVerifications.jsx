@@ -18,12 +18,8 @@ const AdminVerifications = () => {
           .from('verifications')
           .select(`
             *,
-            talent:talent_id (
-              full_name
-            ),
             skill:skill_id (
-              name,
-              description
+              name
             )
           `)
           .order('created_at', { ascending: false });
@@ -60,9 +56,8 @@ const AdminVerifications = () => {
   const columns = [
     { key: 'no', label: 'No' },
     { 
-      key: 'talent', 
-      label: 'Talent',
-      render: (row) => row.talent?.full_name || 'N/A'
+      key: 'talent_id', 
+      label: 'Talent ID'
     },
     {
       key: 'skill',
@@ -77,8 +72,8 @@ const AdminVerifications = () => {
     {
       key: 'doc_url',
       label: 'Document',
-      render: (row) => row.doc_url ? (
-        <a 
+      render: (row) => (
+        <a
           href={row.doc_url}
           target="_blank"
           rel="noopener noreferrer"
@@ -86,7 +81,12 @@ const AdminVerifications = () => {
         >
           View Document
         </a>
-      ) : 'N/A'
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Submitted At',
+      render: (row) => format(new Date(row.created_at), 'MMM d, yyyy')
     },
     {
       key: 'actions',
@@ -105,7 +105,7 @@ const AdminVerifications = () => {
   return (
     <div className="min-h-screen bg-[#fff3f2] p-6">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
