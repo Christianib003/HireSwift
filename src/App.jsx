@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import routes from './routes/routes.jsx'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Create a wrapper component to handle the navbar visibility
 const AppContent = () => {
@@ -17,12 +19,13 @@ const AppContent = () => {
     '/home'
   ];
   
-  const hideNavbarPaths = ['/register', '/login', '/select-status', ...authPaths];
-  const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
-
+  // Show navbar for non-authenticated routes
+  const isAuthPath = authPaths.includes(location.pathname) || 
+    location.pathname.includes('/hiring-cycles/');
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {shouldShowNavbar && <Navbar />}
+      {!isAuthPath && <Navbar />}
       <Routes>
         {routes.map((route) => {
           const RouteElement = route.element;
@@ -39,6 +42,7 @@ const AppContent = () => {
           );
         })}
       </Routes>
+      <ToastContainer />
     </div>
   );
 };

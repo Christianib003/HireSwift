@@ -1,87 +1,42 @@
-import { useEffect, useState } from 'react';
-import { useLocation, Navigate, useNavigate } from 'react-router-dom';
-import AuthLayout from '../../components/layout/AuthLayout';
-import { supabase } from '../../supabase/supabaseClient';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
+import SideNav from '../../components/layout/SideNav';
+import TopBar from '../../components/layout/TopBar';
 
 const AuthenticatedPage = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  
+  // Get the base route (e.g., 'hiring-cycles', 'jobs', etc.)
+  const baseRoute = pathSegments[0];
+  
+  // Convert route to title (e.g., 'hiring-cycles' -> 'Hiring Cycles')
+  const getTitle = (route) => {
+    return route
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        // Try to get data from location state first
-        if (location.state?.userName && location.state?.userStatus) {
-          setUserData({
-            userName: location.state.userName,
-            userStatus: location.state.userStatus
-          });
-          return;
-        }
-
-        // If no state, fetch from Supabase
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          navigate('/login', { replace: true });
-          return;
-        }
-
-        const [
-          { data: talentData },
-          { data: hmData }
-        ] = await Promise.all([
-          supabase.from('talents').select('id').eq('user_id', user.id),
-          supabase.from('hiring_managers').select('id').eq('user_id', user.id)
-        ]);
-
-        const userStatus = talentData?.length > 0 ? 'talent' : 
-                         hmData?.length > 0 ? 'hiring_manager' : null;
-
-        if (userStatus) {
-          const userData = {
-            userName: user.user_metadata.full_name,
-            userStatus
-          };
-          setUserData(userData);
-          
-          // Update location state
-          navigate(location.pathname, {
-            replace: true,
-            state: userData
-          });
-        } else {
-          navigate('/select-status', { replace: true });
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        navigate('/login', { replace: true });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getUserData();
-  }, [location.pathname]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!userData?.userName || !userData?.userStatus) {
-    return <Navigate to="/login" replace />;
-  }
+  // Build breadcrumb title
+  const getBreadcrumbTitle = () => {
+    const baseTitle = getTitle(baseRoute);
+    if (pathSegments.length > 2 && pathSegments[2] === 'details') {
+      return `${baseTitle} > ${pathSegments[1]}`;
+    }
+    return baseTitle;
+  };
 
   return (
-    <AuthLayout userName={userData.userName} userStatus={userData.userStatus}>
-      {children}
-    </AuthLayout>
+    <div className="flex h-screen bg-background">
+      <SideNav />
+      <div className="flex-1 flex flex-col">
+        <TopBar title={getBreadcrumbTitle()} />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 };
 

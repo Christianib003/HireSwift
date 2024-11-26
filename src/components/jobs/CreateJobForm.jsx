@@ -1,30 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabase/supabaseClient';
 
-const LOCATION_OPTIONS = ['In-person', 'Hybrid', 'Remote'];
-const EMPLOYMENT_TYPES = ['Apprenticeship', 'Internship', 'Part-time', 'Full-time'];
-const SALARY_RANGES = ['$100-300', '$300-600', '$600-1000', '$1000-2000', '$2000+'];
-
-const CreateJobForm = ({ onClose }) => {
-  const navigate = useNavigate();
+const CreateJobForm = ({ onClose, onSubmit }) => {
+  const [skills, setSkills] = useState([]); // All available skills
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    openPositions: '',
+    open_positions: '',
     location: '',
-    employmentType: '',
-    salaryRange: '',
-    skillsRequired: [],
-    applicationDeadline: ''
+    employment_type: '',
+    salary_range: '',
+    application_deadline: '',
+    skills_required: [] // Array to store selected skill IDs
   });
-  const [skills, setSkills] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  // Get minimum date (today) for the deadline
-  const today = new Date().toISOString().split('T')[0];
-
+  // Fetch skills when component mounts
   useEffect(() => {
     const fetchSkills = async () => {
       try {
@@ -32,12 +22,11 @@ const CreateJobForm = ({ onClose }) => {
           .from('skills')
           .select('id, name')
           .order('name');
-
+        
         if (error) throw error;
         setSkills(data || []);
-      } catch (error) {
-        console.error('Error fetching skills:', error);
-        setError('Failed to load skills');
+      } catch (err) {
+        console.error('Error fetching skills:', err);
       }
     };
 
@@ -52,214 +41,226 @@ const CreateJobForm = ({ onClose }) => {
     }));
   };
 
-  const handleSkillsChange = (e) => {
-    const selectedSkills = Array.from(e.target.selectedOptions, option => option.value);
-    setFormData(prev => ({
-      ...prev,
-      skillsRequired: selectedSkills
-    }));
+  // Handle skill selection/deselection
+  const handleSkillChange = (skillId) => {
+    setFormData(prev => {
+      const updatedSkills = prev.skills_required.includes(skillId)
+        ? prev.skills_required.filter(id => id !== skillId)
+        : [...prev.skills_required, skillId];
+
+      return {
+        ...prev,
+        skills_required: updatedSkills
+      };
+    });
+  };
+
+  const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Get current user session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) throw sessionError;
-      if (!session?.user) throw new Error('No authenticated user');
-
-      // Get the hiring manager's record
-      const { data: hmData, error: hmError } = await supabase
-        .from('hiring_managers')
-        .select('id, org_id')  // Get both the hiring manager's ID and org_id
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (hmError) throw hmError;
-      if (!hmData) throw new Error('Hiring manager record not found');
-
-      // Create the job with hiring manager's ID
-      const { error: jobError } = await supabase
-        .from('jobs')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          open_positions: parseInt(formData.openPositions),
-          location: formData.location,
-          employment_type: formData.employmentType,
-          salary_range: formData.salaryRange,
-          skills_required: formData.skillsRequired,
-          application_deadline: formData.applicationDeadline,
-          org_id: hmData.org_id,
-          created_by: hmData.id  // Use the hiring manager's ID instead of auth user ID
-        });
-
-      if (jobError) throw jobError;
-
-      // Navigate back to jobs page with state preserved
-      navigate('/jobs', { 
-        replace: true,
-        state: location.state
-      });
-    } catch (error) {
-      console.error('Error creating job:', error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
+    
+    // Validate that at least one skill is selected
+    if (formData.skills_required.length === 0) {
+      return; // Don't submit if no skills are selected
     }
+    
+    await onSubmit(formData);
   };
 
+  const locationOptions = ['In-person', 'Hybrid', 'Remote'];
+  const employmentTypes = ['Apprenticeship', 'Internship', 'Part-time', 'Full-time'];
+  const salaryRanges = [
+    '$100 - $300',
+    '$300 - $600',
+    '$600 - $1000',
+    '$1000 - $2000',
+    '$2000+'
+  ];
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-dark mb-6">Create New Job</h2>
-
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-dark mb-2 font-medium">Job Title</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Number of Open Positions</label>
-            <input
-              type="number"
-              name="openPositions"
-              value={formData.openPositions}
-              onChange={handleChange}
-              min="1"
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Location</label>
-            <select
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            >
-              <option value="">Select location type</option>
-              {LOCATION_OPTIONS.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Employment Type</label>
-            <select
-              name="employmentType"
-              value={formData.employmentType}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            >
-              <option value="">Select employment type</option>
-              {EMPLOYMENT_TYPES.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Salary Range</label>
-            <select
-              name="salaryRange"
-              value={formData.salaryRange}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            >
-              <option value="">Select salary range</option>
-              {SALARY_RANGES.map(range => (
-                <option key={range} value={range}>{range}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Required Skills</label>
-            <select
-              multiple
-              name="skillsRequired"
-              value={formData.skillsRequired}
-              onChange={handleSkillsChange}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              size="5"
-              required
-            >
-              {skills.map(skill => (
-                <option key={skill.id} value={skill.id}>{skill.name}</option>
-              ))}
-            </select>
-            <p className="text-sm text-dark/60 mt-1">Hold Ctrl/Cmd to select multiple skills</p>
-          </div>
-
-          <div>
-            <label className="block text-dark mb-2 font-medium">Application Deadline</label>
-            <input
-              type="date"
-              name="applicationDeadline"
-              value={formData.applicationDeadline}
-              onChange={handleChange}
-              min={today}
-              className="w-full px-4 py-2 border rounded-lg border-dark/30 focus:outline-none focus:border-dark"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 rounded bg-red-50 text-red-500 text-sm">
-              {error}
+    <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+        <div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+            Create New Job
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                Job Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              />
             </div>
-          )}
 
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`flex-1 py-2 rounded-lg text-white font-medium
-                ${isLoading ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:opacity-90'}`}
-            >
-              {isLoading ? 'Creating...' : 'Create Job'}
-            </button>
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Job Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={4}
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="open_positions" className="block text-sm font-medium text-gray-700">
+                Number of Open Positions
+              </label>
+              <input
+                type="number"
+                id="open_positions"
+                name="open_positions"
+                value={formData.open_positions}
+                onChange={handleChange}
+                required
+                min="1"
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              <select
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              >
+                <option value="">Select location type</option>
+                {locationOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="employment_type" className="block text-sm font-medium text-gray-700">
+                Employment Type
+              </label>
+              <select
+                id="employment_type"
+                name="employment_type"
+                value={formData.employment_type}
+                onChange={handleChange}
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              >
+                <option value="">Select employment type</option>
+                {employmentTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="salary_range" className="block text-sm font-medium text-gray-700">
+                Salary Range
+              </label>
+              <select
+                id="salary_range"
+                name="salary_range"
+                value={formData.salary_range}
+                onChange={handleChange}
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              >
+                <option value="">Select salary range</option>
+                {salaryRanges.map(range => (
+                  <option key={range} value={range}>{range}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="application_deadline" className="block text-sm font-medium text-gray-700">
+                Application Deadline
+              </label>
+              <input
+                type="date"
+                id="application_deadline"
+                name="application_deadline"
+                value={formData.application_deadline}
+                onChange={handleChange}
+                required
+                min={getCurrentDate()}
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Required Skills
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border border-gray-300 rounded-md p-3">
+                {skills.map(skill => (
+                  <div key={skill.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`skill-${skill.id}`}
+                      checked={formData.skills_required.includes(skill.id)}
+                      onChange={() => handleSkillChange(skill.id)}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor={`skill-${skill.id}`}
+                      className="ml-2 block text-sm text-gray-900"
+                    >
+                      {skill.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {formData.skills_required.length === 0 && (
+                <p className="mt-1 text-sm text-red-500">
+                  Please select at least one required skill
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-dark/30 text-dark hover:bg-dark/5"
+              className="group relative w-1/4 flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Cancel
             </button>
+            <button
+              type="submit"
+              className="group relative w-1/4 flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              Create
+            </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
