@@ -14,6 +14,8 @@ import JobDetails from '../pages/JobDetails';
 import AdminJobs from '../pages/admin/AdminJobs';
 import AdminSkills from '../pages/admin/AdminSkills';
 import AdminOrganizations from '../pages/admin/AdminOrganizations';
+import AdminVerifications from '../pages/admin/AdminVerifications';
+import AdminVerificationDetails from '../pages/admin/AdminVerificationDetails';
 
 // Wrapper components for authenticated routes
 const AuthenticatedJobs = ({ userStatus }) => (
@@ -68,6 +70,18 @@ const AuthenticatedAdminOrganizations = () => (
 const AuthenticatedAdminPlaceholder = ({ title }) => (
   <AuthenticatedPage>
     <PlaceholderPage title={title} />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminVerifications = () => (
+  <AuthenticatedPage>
+    <AdminVerifications />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminVerificationDetails = () => (
+  <AuthenticatedPage>
+    <AdminVerificationDetails />
   </AuthenticatedPage>
 );
 
@@ -164,6 +178,14 @@ const routes = [
   {
     path: '/admin/help',
     element: () => <AuthenticatedAdminPlaceholder title="Help" />
+  },
+  {
+    path: '/admin/verifications',
+    element: AuthenticatedAdminVerifications
+  },
+  {
+    path: '/admin/verifications/:id',
+    element: AuthenticatedAdminVerificationDetails
   }
 ];
 

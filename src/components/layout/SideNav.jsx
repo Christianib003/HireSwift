@@ -9,7 +9,8 @@ import {
   FaHeadset, 
   FaSearch,
   FaCogs,
-  FaBuilding
+  FaBuilding,
+  FaUserCheck
 } from 'react-icons/fa';
 import { supabase } from '../../supabase/supabaseClient';
 import UserDropdown from './UserDropdown';
@@ -66,6 +67,7 @@ const SideNav = () => {
       return [
         { path: '/admin/jobs', icon: FaBriefcase, label: 'Jobs' },
         { path: '/admin/skills', icon: FaCogs, label: 'Skills' },
+        { path: '/admin/verifications', icon: FaUserCheck, label: 'Verification Requests' },
         { path: '/admin/organizations', icon: FaBuilding, label: 'Organizations' },
         { path: '/admin/support', icon: FaHeadset, label: 'Support' },
         { path: '/admin/help', icon: FaQuestionCircle, label: 'Help' }
