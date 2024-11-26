@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaChevronDown } from 'react-icons/fa';
 import { supabase } from '../../supabase/supabaseClient';
 
 const UserDropdown = () => {
@@ -61,22 +61,25 @@ const UserDropdown = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-3 text-white hover:opacity-80 transition-opacity w-full"
+        className="flex items-center justify-between text-white hover:opacity-80 transition-opacity w-full"
       >
-        <FaUserCircle className="w-8 h-8" />
-        <span className="font-medium text-left flex-1 overflow-hidden overflow-ellipsis whitespace-nowrap">
-          {userName}
-        </span>
+        <div className="flex items-center space-x-3">
+          <FaUserCircle className="w-8 h-8" />
+          <span className="font-medium text-left flex-1 overflow-hidden overflow-ellipsis whitespace-nowrap">
+            {userName}
+          </span>
+        </div>
+        <FaChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[#2c1338] border border-white/10 shadow-lg py-1 z-50">
           <button
             onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-[#e57cd8] transition-colors"
           >
             Logout
           </button>
