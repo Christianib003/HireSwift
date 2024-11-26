@@ -50,6 +50,47 @@ const DocumentSubmissionForm = ({ step, onSubmit }) => {
   );
 };
 
+const TakeHomeProjectForm = ({ step, onSubmit }) => {
+  const [marks, setMarks] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(Number(marks));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <div>
+        <a 
+          href={step.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline block mb-4"
+        >
+          Click here to access the Take-home Project
+        </a>
+        <label className="block text-sm font-medium text-gray-700">Marks Obtained</label>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={marks}
+          onChange={(e) => setMarks(e.target.value)}
+          required
+          placeholder="Enter marks (0-100)"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-primary"
+        />
+      </div>
+      <button
+        type="submit"
+        className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+      >
+        Submit Marks
+      </button>
+    </form>
+  );
+};
+
 const ApplicationProgress = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -207,6 +248,49 @@ const ApplicationProgress = () => {
     }
   };
 
+  const handleMarksSubmission = async (marks) => {
+    try {
+      // Find current step and next step
+      const currentStep = steps.find(step => step.applications?.includes(id));
+      const nextStep = steps.find(step => step.sequence_order === (currentStep.sequence_order + 1));
+
+      // Check if marks meet minimum pass mark
+      if (marks < currentStep.min_pass_mark) {
+        toast.error(`Marks must be at least ${currentStep.min_pass_mark}%`);
+        return;
+      }
+
+      // Update current step - remove from applications and add to passed_applications
+      const { error: currentStepError } = await supabase
+        .from('hiring_cycle_steps')
+        .update({
+          applications: (currentStep.applications || []).filter(appId => appId !== id),
+          passed_applications: [...(currentStep.passed_applications || []), id]
+        })
+        .eq('id', currentStep.id);
+
+      if (currentStepError) throw currentStepError;
+
+      // Update next step - add to applications
+      if (nextStep) {
+        const { error: nextStepError } = await supabase
+          .from('hiring_cycle_steps')
+          .update({
+            applications: [...(nextStep.applications || []), id]
+          })
+          .eq('id', nextStep.id);
+
+        if (nextStepError) throw nextStepError;
+      }
+
+      toast.success('Marks submitted successfully!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error submitting marks:', error);
+      toast.error('Error submitting marks');
+    }
+  };
+
   const isStepActive = (step) => {
     return step.applications && step.applications.includes(id);
   };
@@ -314,6 +398,12 @@ const ApplicationProgress = () => {
                       <DocumentSubmissionForm 
                         step={step}
                         onSubmit={handleDocumentSubmission}
+                      />
+                    )}
+                    {isStepActive(step) && step.name === "Take-home Project" && (
+                      <TakeHomeProjectForm 
+                        step={step}
+                        onSubmit={handleMarksSubmission}
                       />
                     )}
                   </div>
