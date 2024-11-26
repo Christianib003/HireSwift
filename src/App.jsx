@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import routes from './routes/routes.jsx'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Create a wrapper component to handle the navbar visibility
 const AppContent = () => {
@@ -39,6 +41,7 @@ const AppContent = () => {
           );
         })}
       </Routes>
+      <ToastContainer />
     </div>
   );
 };
