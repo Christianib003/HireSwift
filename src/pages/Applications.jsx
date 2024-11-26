@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
-import { FaSadTear } from 'react-icons/fa';
+import { FaSadTear, FaArrowRight } from 'react-icons/fa';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const Applications = () => {
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -88,6 +90,15 @@ const Applications = () => {
                   </div>
                 </div>
                 <p className="text-dark/70 mb-4">{application.job.description}</p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => navigate(`/applications/${application.id}/progress`)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+                  >
+                    Open
+                    <FaArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
