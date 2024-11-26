@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/supabaseClient';
 import { format } from 'date-fns';
-import { FaCircle, FaLongArrowAltDown } from 'react-icons/fa';
+import { FaCircle, FaLongArrowAltDown, FaCheck } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const DocumentSubmissionForm = ({ step, onSubmit }) => {
@@ -161,7 +161,7 @@ const ApplicationProgress = () => {
 
   const handleDocumentSubmission = async (documents) => {
     try {
-      // Update application with document URLs
+      // 1. Update application with document URLs
       const { error: updateError } = await supabase
         .from('applications')
         .update({
@@ -171,6 +171,33 @@ const ApplicationProgress = () => {
         .eq('id', id);
 
       if (updateError) throw updateError;
+
+      // 2. Find current step and next step
+      const currentStep = steps.find(step => step.applications?.includes(id));
+      const nextStep = steps.find(step => step.sequence_order === (currentStep.sequence_order + 1));
+
+      // 3. Update current step - remove from applications and add to passed_applications
+      const { error: currentStepError } = await supabase
+        .from('hiring_cycle_steps')
+        .update({
+          applications: (currentStep.applications || []).filter(appId => appId !== id),
+          passed_applications: [...(currentStep.passed_applications || []), id]
+        })
+        .eq('id', currentStep.id);
+
+      if (currentStepError) throw currentStepError;
+
+      // 4. Update next step - add to applications
+      if (nextStep) {
+        const { error: nextStepError } = await supabase
+          .from('hiring_cycle_steps')
+          .update({
+            applications: [...(nextStep.applications || []), id]
+          })
+          .eq('id', nextStep.id);
+
+        if (nextStepError) throw nextStepError;
+      }
 
       toast.success('Documents submitted successfully!');
       window.location.reload();
@@ -182,6 +209,10 @@ const ApplicationProgress = () => {
 
   const isStepActive = (step) => {
     return step.applications && step.applications.includes(id);
+  };
+
+  const isStepPassed = (step) => {
+    return step.passed_applications && step.passed_applications.includes(id);
   };
 
   if (isLoading) {
@@ -249,11 +280,28 @@ const ApplicationProgress = () => {
               {steps.map((step, index) => (
                 <div key={step.id} className="w-full">
                   <div className={`
-                    flex flex-col items-center p-4 rounded-lg border-2
-                    ${isStepActive(step) ? 'border-primary bg-primary/5' : 'border-gray-300 bg-gray-50'}
+                    relative flex flex-col items-center p-4 rounded-lg border-2
+                    ${isStepPassed(step) 
+                      ? 'border-[#59c9a5] bg-[#59c9a5]/5'
+                      : isStepActive(step)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-300 bg-gray-50'
+                    }
                   `}>
+                    {isStepPassed(step) && (
+                      <div className="absolute top-2 right-2">
+                        <FaCheck className="w-5 h-5 text-[#59c9a5]" />
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
-                      <FaCircle className={`w-3 h-3 ${isStepActive(step) ? 'text-primary' : 'text-gray-400'}`} />
+                      <FaCircle className={`w-3 h-3 
+                        ${isStepPassed(step)
+                          ? 'text-[#59c9a5]'
+                          : isStepActive(step)
+                            ? 'text-primary'
+                            : 'text-gray-400'
+                        }`}
+                      />
                       <span className="font-medium">{step.name}</span>
                     </div>
                     <p className="text-sm text-gray-600 mt-2">{step.description}</p>
