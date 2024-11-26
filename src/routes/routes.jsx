@@ -16,6 +16,7 @@ import AdminSkills from '../pages/admin/AdminSkills';
 import AdminOrganizations from '../pages/admin/AdminOrganizations';
 import AdminVerifications from '../pages/admin/AdminVerifications';
 import AdminVerificationDetails from '../pages/admin/AdminVerificationDetails';
+import Verifications from '../pages/Verifications';
 
 // Wrapper components for authenticated routes
 const AuthenticatedJobs = ({ userStatus }) => (
@@ -132,7 +133,11 @@ const routes = [
   },
   {
     path: '/verifications',
-    element: () => <AuthenticatedPlaceholder title="My Verifications" />
+    element: () => (
+      <AuthenticatedPage>
+        <Verifications />
+      </AuthenticatedPage>
+    )
   },
   {
     path: '/documents',
