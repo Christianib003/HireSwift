@@ -1,6 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { FaBriefcase, FaClipboardList, FaFileAlt, FaCheckCircle, FaQuestionCircle, FaHeadset, FaSearch } from 'react-icons/fa';
+import { 
+  FaBriefcase, 
+  FaClipboardList, 
+  FaFileAlt, 
+  FaCheckCircle, 
+  FaQuestionCircle, 
+  FaHeadset, 
+  FaSearch,
+  FaCogs,
+  FaBuilding
+} from 'react-icons/fa';
 import { supabase } from '../../supabase/supabaseClient';
 import UserDropdown from './UserDropdown';
 
@@ -15,6 +25,13 @@ const SideNav = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // Check if user is an admin
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
         // Check if user is a hiring manager
         const { data: hiringManager } = await supabase
           .from('hiring_managers')
@@ -22,14 +39,16 @@ const SideNav = () => {
           .eq('user_id', user.id)
           .single();
 
-        // Check if user is a talent (not applicant)
+        // Check if user is a talent
         const { data: talent } = await supabase
           .from('talents')
           .select('id')
           .eq('user_id', user.id)
           .single();
 
-        if (hiringManager) {
+        if (admin) {
+          setUserRole('admin');
+        } else if (hiringManager) {
           setUserRole('hiring_manager');
         } else if (talent) {
           setUserRole('talent');
@@ -43,7 +62,15 @@ const SideNav = () => {
   }, []);
 
   const getNavItems = () => {
-    if (userRole === 'hiring_manager') {
+    if (userRole === 'admin') {
+      return [
+        { path: '/admin/jobs', icon: FaBriefcase, label: 'Jobs' },
+        { path: '/admin/skills', icon: FaCogs, label: 'Skills' },
+        { path: '/admin/organizations', icon: FaBuilding, label: 'Organizations' },
+        { path: '/admin/support', icon: FaHeadset, label: 'Support' },
+        { path: '/admin/help', icon: FaQuestionCircle, label: 'Help' }
+      ];
+    } else if (userRole === 'hiring_manager') {
       return [
         { path: '/jobs', icon: FaBriefcase, label: 'My Jobs' },
         { path: '/hiring-cycles', icon: FaClipboardList, label: 'Hiring Cycles' },
@@ -67,7 +94,7 @@ const SideNav = () => {
   const navItems = getNavItems();
 
   if (!userRole) {
-    return null; // Or show a loading state
+    return null;
   }
 
   return (

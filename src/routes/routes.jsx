@@ -11,6 +11,9 @@ import AuthenticatedPage from '../pages/auth/AuthenticatedPage';
 import HiringCycles from '../pages/HiringCycles';
 import HiringCycle from '../pages/HiringCycle';
 import JobDetails from '../pages/JobDetails';
+import AdminJobs from '../pages/admin/AdminJobs';
+import AdminSkills from '../pages/admin/AdminSkills';
+import AdminOrganizations from '../pages/admin/AdminOrganizations';
 
 // Wrapper components for authenticated routes
 const AuthenticatedJobs = ({ userStatus }) => (
@@ -40,6 +43,31 @@ const AuthenticatedHiringCycle = () => (
 const AuthenticatedJobDetails = () => (
   <AuthenticatedPage>
     <JobDetails />
+  </AuthenticatedPage>
+);
+
+// Wrapper components for authenticated admin routes
+const AuthenticatedAdminJobs = () => (
+  <AuthenticatedPage>
+    <AdminJobs />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminSkills = () => (
+  <AuthenticatedPage>
+    <AdminSkills />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminOrganizations = () => (
+  <AuthenticatedPage>
+    <AdminOrganizations />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminPlaceholder = ({ title }) => (
+  <AuthenticatedPage>
+    <PlaceholderPage title={title} />
   </AuthenticatedPage>
 );
 
@@ -115,6 +143,27 @@ const routes = [
   {
     path: '/jobs/:id/details',
     element: AuthenticatedJobDetails
+  },
+  // Admin routes
+  {
+    path: '/admin/jobs',
+    element: AuthenticatedAdminJobs
+  },
+  {
+    path: '/admin/skills',
+    element: AuthenticatedAdminSkills
+  },
+  {
+    path: '/admin/organizations',
+    element: AuthenticatedAdminOrganizations
+  },
+  {
+    path: '/admin/support',
+    element: () => <AuthenticatedAdminPlaceholder title="Support" />
+  },
+  {
+    path: '/admin/help',
+    element: () => <AuthenticatedAdminPlaceholder title="Help" />
   }
 ];
 
