@@ -48,6 +48,13 @@ const Applications = () => {
     fetchApplications();
   }, []);
 
+  const getStatusBadge = (status) => {
+    if (status === 'pending') {
+      return <span className="text-gray-600 font-medium">Not Started</span>;
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -73,9 +80,12 @@ const Applications = () => {
                     <h3 className="text-xl font-bold text-dark">{application.job.title}</h3>
                     <p className="text-gray-600">{application.job.organization.name}</p>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {format(new Date(application.created_at), 'MMM d, yyyy')}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(application.created_at), 'MMM d, yyyy')}
+                    </span>
+                    {getStatusBadge(application.status)}
+                  </div>
                 </div>
                 <p className="text-dark/70 mb-4">{application.job.description}</p>
               </div>

@@ -133,7 +133,7 @@ const JobDetails = () => {
         .insert([{
           talent_id: talentId,
           job_id: id,
-          status: 'active'
+          status: 'pending'
         }]);
 
       if (error) throw error;
