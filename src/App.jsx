@@ -19,12 +19,13 @@ const AppContent = () => {
     '/home'
   ];
   
-  const hideNavbarPaths = ['/register', '/login', '/select-status', ...authPaths];
-  const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
-
+  // Show navbar for non-authenticated routes
+  const isAuthPath = authPaths.includes(location.pathname) || 
+    location.pathname.includes('/hiring-cycles/');
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {shouldShowNavbar && <Navbar />}
+      {!isAuthPath && <Navbar />}
       <Routes>
         {routes.map((route) => {
           const RouteElement = route.element;

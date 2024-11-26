@@ -63,8 +63,6 @@ const HiringCycle = () => {
   return (
     <div className="min-h-screen bg-[#fff3f2] p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold mb-6">{hiringCycle.name}</h2>
-        
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-medium mb-2">Job Details</h3>

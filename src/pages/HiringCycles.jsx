@@ -64,8 +64,6 @@ const HiringCycles = () => {
   return (
     <div className="min-h-screen bg-[#fff3f2] p-6">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl font-bold mb-6">Hiring Cycles</h2>
-        
         {hiringCycles.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-dark/70">
             <FaSadTear className="w-16 h-16 mb-4" />
