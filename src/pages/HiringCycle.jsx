@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import StepDetails from '../components/hiring-cycles/StepDetails';
 import ViewStatistics from '../components/hiring-cycles/ViewStatistics';
+import AddStepForm from '../components/hiring-cycles/AddStepForm';
 
 const HiringCycle = () => {
   const { id } = useParams();
@@ -15,45 +16,46 @@ const HiringCycle = () => {
   const [selectedStep, setSelectedStep] = useState(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [hasApplications, setHasApplications] = useState(false);
+  const [showAddStepForm, setShowAddStepForm] = useState(false);
+
+  const fetchHiringCycleDetails = async () => {
+    try {
+      // Fetch hiring cycle details
+      const { data: cycleData, error: cycleError } = await supabase
+        .from('hiring_cycles')
+        .select(`
+          *,
+          job:job_id (
+            title,
+            description,
+            application_deadline
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (cycleError) throw cycleError;
+
+      // Fetch steps for this hiring cycle
+      const { data: stepsData, error: stepsError } = await supabase
+        .from('hiring_cycle_steps')
+        .select('*')
+        .eq('hiring_cycle_id', id)
+        .order('sequence_order');
+
+      if (stepsError) throw stepsError;
+
+      setHiringCycle(cycleData);
+      setSteps(stepsData);
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error('Error fetching hiring cycle details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHiringCycleDetails = async () => {
-      try {
-        // Fetch hiring cycle details
-        const { data: cycleData, error: cycleError } = await supabase
-          .from('hiring_cycles')
-          .select(`
-            *,
-            job:job_id (
-              title,
-              description,
-              application_deadline
-            )
-          `)
-          .eq('id', id)
-          .single();
-
-        if (cycleError) throw cycleError;
-
-        // Fetch steps for this hiring cycle
-        const { data: stepsData, error: stepsError } = await supabase
-          .from('hiring_cycle_steps')
-          .select('*')
-          .eq('hiring_cycle_id', id)
-          .order('sequence_order');
-
-        if (stepsError) throw stepsError;
-
-        setHiringCycle(cycleData);
-        setSteps(stepsData);
-      } catch (err) {
-        console.error('Error:', err);
-        toast.error('Error fetching hiring cycle details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchHiringCycleDetails();
   }, [id]);
 
@@ -137,7 +139,15 @@ const HiringCycle = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium mb-4">Hiring Steps</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Hiring Steps</h3>
+              <button
+                onClick={() => setShowAddStepForm(true)}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
+              >
+                Add Step
+              </button>
+            </div>
             <div className="space-y-4">
               {steps.map((step, index) => (
                 <div 
@@ -209,6 +219,17 @@ const HiringCycle = () => {
         <ViewStatistics
           hiringCycle={hiringCycle}
           onClose={() => setShowStatistics(false)}
+        />
+      )}
+
+      {showAddStepForm && (
+        <AddStepForm
+          hiringCycleId={id}
+          onClose={() => setShowAddStepForm(false)}
+          onSuccess={() => {
+            fetchHiringCycleDetails();
+            setShowAddStepForm(false);
+          }}
         />
       )}
     </div>
