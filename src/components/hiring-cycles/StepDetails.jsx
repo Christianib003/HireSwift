@@ -195,13 +195,39 @@ const StepDetails = ({ step, onClose }) => {
       // Get the current step data to access the arrays
       const { data: currentStep, error: stepFetchError } = await supabase
         .from('hiring_cycle_steps')
-        .select('applications, passed_applications, failed_applications')
+        .select('applications, passed_applications, failed_applications, sequence_order')
         .eq('id', step.id)
         .single();
 
       if (stepFetchError) throw stepFetchError;
 
-      // Update step arrays
+      // Get the next step if passed
+      if (passed) {
+        const { data: nextStep, error: nextStepError } = await supabase
+          .from('hiring_cycle_steps')
+          .select('id, applications')
+          .eq('hiring_cycle_id', step.hiring_cycle_id)
+          .eq('sequence_order', currentStep.sequence_order + 1)
+          .single();
+
+        if (nextStepError && !nextStepError.message.includes('No rows found')) {
+          throw nextStepError;
+        }
+
+        // Update next step if it exists
+        if (nextStep) {
+          const { error: nextStepUpdateError } = await supabase
+            .from('hiring_cycle_steps')
+            .update({
+              applications: [...(nextStep.applications || []), applicationId]
+            })
+            .eq('id', nextStep.id);
+
+          if (nextStepUpdateError) throw nextStepUpdateError;
+        }
+      }
+
+      // Update current step arrays
       const { error: stepError } = await supabase
         .from('hiring_cycle_steps')
         .update({
@@ -220,11 +246,14 @@ const StepDetails = ({ step, onClose }) => {
 
       if (stepError) throw stepError;
 
-      // Update application marks
+      // Update application marks and status if it's the final step
       const { error: updateError } = await supabase
         .from('applications')
         .update({
-          cumulative_marks: newCumulativeMarks
+          cumulative_marks: newCumulativeMarks,
+          ...(step.name === "Final Interview" && {
+            status: passed ? 'passed' : 'failed'
+          })
         })
         .eq('id', applicationId);
 

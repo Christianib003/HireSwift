@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/supabaseClient';
 import { format } from 'date-fns';
-import { FaCircle, FaLongArrowAltDown, FaCheck } from 'react-icons/fa';
+import { FaCircle, FaLongArrowAltDown, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const DocumentSubmissionForm = ({ step, onSubmit }) => {
@@ -346,6 +346,10 @@ const ApplicationProgress = () => {
     return step.passed_applications && step.passed_applications.includes(id);
   };
 
+  const isStepFailed = (step) => {
+    return step.failed_applications && step.failed_applications.includes(id);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -414,9 +418,11 @@ const ApplicationProgress = () => {
                     relative flex flex-col items-center p-4 rounded-lg border-2
                     ${isStepPassed(step) 
                       ? 'border-[#59c9a5] bg-[#59c9a5]/5'
-                      : isStepActive(step)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-300 bg-gray-50'
+                      : isStepFailed(step)
+                        ? 'border-[#ff8a7a] bg-[#ff8a7a]/5'
+                        : isStepActive(step)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-300 bg-gray-50'
                     }
                   `}>
                     {isStepPassed(step) && (
@@ -424,13 +430,20 @@ const ApplicationProgress = () => {
                         <FaCheck className="w-5 h-5 text-[#59c9a5]" />
                       </div>
                     )}
+                    {isStepFailed(step) && (
+                      <div className="absolute top-2 right-2">
+                        <FaTimes className="w-5 h-5 text-[#ff8a7a]" />
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <FaCircle className={`w-3 h-3 
                         ${isStepPassed(step)
                           ? 'text-[#59c9a5]'
-                          : isStepActive(step)
-                            ? 'text-primary'
-                            : 'text-gray-400'
+                          : isStepFailed(step)
+                            ? 'text-[#ff8a7a]'
+                            : isStepActive(step)
+                              ? 'text-primary'
+                              : 'text-gray-400'
                         }`}
                       />
                       <span className="font-medium">{step.name}</span>
