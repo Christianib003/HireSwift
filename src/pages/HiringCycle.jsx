@@ -14,7 +14,7 @@ const HiringCycle = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState(null);
   const [showStatistics, setShowStatistics] = useState(false);
-  const [hasCompletedApplications, setHasCompletedApplications] = useState(false);
+  const [hasApplications, setHasApplications] = useState(false);
 
   useEffect(() => {
     const fetchHiringCycleDetails = async () => {
@@ -58,29 +58,30 @@ const HiringCycle = () => {
   }, [id]);
 
   useEffect(() => {
-    const checkCompletedApplications = async () => {
+    const checkApplications = async () => {
       try {
         // Get the final step
         const { data: steps } = await supabase
           .from('hiring_cycle_steps')
-          .select('passed_applications, failed_applications')
+          .select('applications, passed_applications, failed_applications')
           .eq('hiring_cycle_id', id)
           .order('sequence_order', { ascending: false })
           .limit(1);
 
         const finalStep = steps?.[0];
-        const hasCompleted = finalStep && (
-          (finalStep.passed_applications?.length > 0 || 
+        const hasApps = finalStep && (
+          (finalStep.applications?.length > 0 || 
+           finalStep.passed_applications?.length > 0 || 
            finalStep.failed_applications?.length > 0)
         );
 
-        setHasCompletedApplications(hasCompleted);
+        setHasApplications(hasApps);
       } catch (error) {
-        console.error('Error checking completed applications:', error);
+        console.error('Error checking applications:', error);
       }
     };
 
-    checkCompletedApplications();
+    checkApplications();
   }, [id]);
 
   const handleStepClick = async (step) => {
@@ -186,7 +187,7 @@ const HiringCycle = () => {
             Back to Hiring Cycles
           </button>
 
-          {hasCompletedApplications && (
+          {hasApplications && (
             <button
               onClick={() => setShowStatistics(true)}
               className="px-6 py-2 text-sm font-medium text-white bg-[#59c9a5] rounded-md hover:opacity-90"

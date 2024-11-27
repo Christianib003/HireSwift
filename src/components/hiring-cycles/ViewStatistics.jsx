@@ -64,18 +64,22 @@ const ViewStatistics = ({ hiringCycle, onClose }) => {
           .eq('id', hiringCycle.job_id)
           .single();
 
-        // Get the final step (last step in sequence)
+        // Get the final step
         const finalStep = stepsData[stepsData.length - 1];
         
-        // Get only passed applications from the final step
-        const passedApplications = finalStep.passed_applications || [];
+        // Get all applications from the final step
+        const allFinalApplications = [
+          ...(finalStep.applications || []),
+          ...(finalStep.passed_applications || []),
+          ...(finalStep.failed_applications || [])
+        ];
 
-        if (passedApplications.length > 0) {
-          // Fetch details for passed applications
+        if (allFinalApplications.length > 0) {
+          // Fetch details for all applications
           const { data: applicationsData, error: appError } = await supabase
             .from('applications')
             .select('*')
-            .in('id', passedApplications);
+            .in('id', allFinalApplications);
 
           if (appError) throw appError;
 
@@ -90,7 +94,6 @@ const ViewStatistics = ({ hiringCycle, onClose }) => {
               }))
               .sort((a, b) => b.average_marks - a.average_marks);
 
-            console.log('Processed applications:', applicationsWithAvg); // Debug log
             setApplications(applicationsWithAvg);
           }
         }
