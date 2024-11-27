@@ -28,13 +28,13 @@ const AppContent = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Public routes where navbar should be shown (only when not logged in)
-  const publicRoutes = ['/', '/features', '/resources', '/about'];
-  const shouldShowNavbar = publicRoutes.includes(location.pathname) && !isLoggedIn;
+  // Public routes where navbar should be shown
+  const publicRoutes = ['/', '/features', '/resources', '/about', '/register', '/login'];
+  const shouldShowNavbar = publicRoutes.includes(location.pathname) || !isLoggedIn;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {shouldShowNavbar && <Navbar />}
+      {shouldShowNavbar && <Navbar isLoggedIn={isLoggedIn} />}
       <Routes>
         {routes.map((route) => {
           const RouteElement = route.element;
