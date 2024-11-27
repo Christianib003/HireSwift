@@ -8,6 +8,17 @@ import Home from '../pages/Home';
 import Jobs from '../pages/Jobs';
 import PlaceholderPage from '../pages/PlaceholderPage';
 import AuthenticatedPage from '../pages/auth/AuthenticatedPage';
+import HiringCycles from '../pages/HiringCycles';
+import HiringCycle from '../pages/HiringCycle';
+import JobDetails from '../pages/JobDetails';
+import AdminJobs from '../pages/admin/AdminJobs';
+import AdminSkills from '../pages/admin/AdminSkills';
+import AdminOrganizations from '../pages/admin/AdminOrganizations';
+import AdminVerifications from '../pages/admin/AdminVerifications';
+import AdminVerificationDetails from '../pages/admin/AdminVerificationDetails';
+import Verifications from '../pages/Verifications';
+import Applications from '../pages/Applications';
+import ApplicationProgress from '../pages/ApplicationProgress';
 
 // Wrapper components for authenticated routes
 const AuthenticatedJobs = ({ userStatus }) => (
@@ -19,6 +30,61 @@ const AuthenticatedJobs = ({ userStatus }) => (
 const AuthenticatedPlaceholder = ({ title }) => (
   <AuthenticatedPage>
     <PlaceholderPage title={title} />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedHiringCycles = () => (
+  <AuthenticatedPage>
+    <HiringCycles />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedHiringCycle = () => (
+  <AuthenticatedPage>
+    <HiringCycle />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedJobDetails = () => (
+  <AuthenticatedPage>
+    <JobDetails />
+  </AuthenticatedPage>
+);
+
+// Wrapper components for authenticated admin routes
+const AuthenticatedAdminJobs = () => (
+  <AuthenticatedPage>
+    <AdminJobs />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminSkills = () => (
+  <AuthenticatedPage>
+    <AdminSkills />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminOrganizations = () => (
+  <AuthenticatedPage>
+    <AdminOrganizations />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminPlaceholder = ({ title }) => (
+  <AuthenticatedPage>
+    <PlaceholderPage title={title} />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminVerifications = () => (
+  <AuthenticatedPage>
+    <AdminVerifications />
+  </AuthenticatedPage>
+);
+
+const AuthenticatedAdminVerificationDetails = () => (
+  <AuthenticatedPage>
+    <AdminVerificationDetails />
   </AuthenticatedPage>
 );
 
@@ -65,11 +131,19 @@ const routes = [
   },
   {
     path: '/applications',
-    element: () => <AuthenticatedPlaceholder title="My Applications" />
+    element: () => (
+      <AuthenticatedPage>
+        <Applications />
+      </AuthenticatedPage>
+    )
   },
   {
     path: '/verifications',
-    element: () => <AuthenticatedPlaceholder title="My Verifications" />
+    element: () => (
+      <AuthenticatedPage>
+        <Verifications />
+      </AuthenticatedPage>
+    )
   },
   {
     path: '/documents',
@@ -77,7 +151,11 @@ const routes = [
   },
   {
     path: '/hiring-cycles',
-    element: () => <AuthenticatedPlaceholder title="Hiring Cycles" />
+    element: AuthenticatedHiringCycles
+  },
+  {
+    path: '/hiring-cycles/:id/details',
+    element: AuthenticatedHiringCycle
   },
   {
     path: '/support',
@@ -86,6 +164,47 @@ const routes = [
   {
     path: '/help',
     element: () => <AuthenticatedPlaceholder title="Help" />
+  },
+  {
+    path: '/jobs/:id/details',
+    element: AuthenticatedJobDetails
+  },
+  // Admin routes
+  {
+    path: '/admin/jobs',
+    element: AuthenticatedAdminJobs
+  },
+  {
+    path: '/admin/skills',
+    element: AuthenticatedAdminSkills
+  },
+  {
+    path: '/admin/organizations',
+    element: AuthenticatedAdminOrganizations
+  },
+  {
+    path: '/admin/support',
+    element: () => <AuthenticatedAdminPlaceholder title="Support" />
+  },
+  {
+    path: '/admin/help',
+    element: () => <AuthenticatedAdminPlaceholder title="Help" />
+  },
+  {
+    path: '/admin/verifications',
+    element: AuthenticatedAdminVerifications
+  },
+  {
+    path: '/admin/verifications/:id',
+    element: AuthenticatedAdminVerificationDetails
+  },
+  {
+    path: '/applications/:id/progress',
+    element: () => (
+      <AuthenticatedPage>
+        <ApplicationProgress />
+      </AuthenticatedPage>
+    )
   }
 ];
 

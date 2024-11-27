@@ -50,7 +50,6 @@ const Login = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        // Sign in user
         const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
@@ -59,23 +58,27 @@ const Login = () => {
         if (signInError) throw signInError;
 
         if (authData?.user) {
-          console.log('Auth successful:', authData);
-          
-          // Get user's role
           const [
+            { data: adminData },
             { data: talentData },
             { data: hmData }
           ] = await Promise.all([
+            supabase.from('admins').select('*').eq('user_id', authData.user.id),
             supabase.from('talents').select('*').eq('user_id', authData.user.id),
             supabase.from('hiring_managers').select('*').eq('user_id', authData.user.id)
           ]);
 
-          console.log('Role check:', { talentData, hmData });
-
           const userName = authData.user.user_metadata?.full_name;
 
-          if (talentData?.length > 0) {
-            console.log('Navigating to explore as talent');
+          if (adminData?.length > 0) {
+            navigate('/admin/jobs', { 
+              replace: true,
+              state: { 
+                userName,
+                userStatus: 'admin'
+              }
+            });
+          } else if (talentData?.length > 0) {
             navigate('/explore', { 
               replace: true,
               state: { 
@@ -84,7 +87,6 @@ const Login = () => {
               }
             });
           } else if (hmData?.length > 0) {
-            console.log('Navigating to jobs as hiring manager');
             navigate('/jobs', { 
               replace: true,
               state: { 
@@ -93,12 +95,9 @@ const Login = () => {
               }
             });
           } else {
-            console.log('Navigating to status selection');
             navigate('/select-status', { 
               replace: true,
-              state: { 
-                userName
-              }
+              state: { userName }
             });
           }
         }
