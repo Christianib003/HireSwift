@@ -1,4 +1,4 @@
-const Table = ({ columns, data, isLoading }) => {
+const Table = ({ columns, data, isLoading, rowClassName }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -12,7 +12,7 @@ const Table = ({ columns, data, isLoading }) => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            {columns.map((column, index) => (
+            {columns.map((column) => (
               <th
                 key={column.key}
                 scope="col"
@@ -24,14 +24,17 @@ const Table = ({ columns, data, isLoading }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.map((item, index) => (
-            <tr key={item.id}>
+          {data.map((item, rowIndex) => (
+            <tr 
+              key={item.id} 
+              className={rowClassName ? rowClassName(item, rowIndex) : ''}
+            >
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {index + 1}
+                {rowIndex + 1}
               </td>
               {columns.slice(1).map(column => (
                 <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {column.render ? column.render(item) : item[column.key]}
+                  {column.render ? column.render(item, rowIndex) : item[column.key]}
                 </td>
               ))}
             </tr>

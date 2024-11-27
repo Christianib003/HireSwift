@@ -4,6 +4,7 @@ import { supabase } from '../supabase/supabaseClient';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import StepDetails from '../components/hiring-cycles/StepDetails';
+import ViewStatistics from '../components/hiring-cycles/ViewStatistics';
 
 const HiringCycle = () => {
   const { id } = useParams();
@@ -12,6 +13,8 @@ const HiringCycle = () => {
   const [steps, setSteps] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState(null);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [hasCompletedApplications, setHasCompletedApplications] = useState(false);
 
   useEffect(() => {
     const fetchHiringCycleDetails = async () => {
@@ -52,6 +55,32 @@ const HiringCycle = () => {
     };
 
     fetchHiringCycleDetails();
+  }, [id]);
+
+  useEffect(() => {
+    const checkCompletedApplications = async () => {
+      try {
+        // Get the final step
+        const { data: steps } = await supabase
+          .from('hiring_cycle_steps')
+          .select('passed_applications, failed_applications')
+          .eq('hiring_cycle_id', id)
+          .order('sequence_order', { ascending: false })
+          .limit(1);
+
+        const finalStep = steps?.[0];
+        const hasCompleted = finalStep && (
+          (finalStep.passed_applications?.length > 0 || 
+           finalStep.failed_applications?.length > 0)
+        );
+
+        setHasCompletedApplications(hasCompleted);
+      } catch (error) {
+        console.error('Error checking completed applications:', error);
+      }
+    };
+
+    checkCompletedApplications();
   }, [id]);
 
   const handleStepClick = async (step) => {
@@ -149,13 +178,22 @@ const HiringCycle = () => {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex justify-between items-center">
           <button
             onClick={() => navigate('/hiring-cycles')}
             className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90"
           >
             Back to Hiring Cycles
           </button>
+
+          {hasCompletedApplications && (
+            <button
+              onClick={() => setShowStatistics(true)}
+              className="px-6 py-2 text-sm font-medium text-white bg-[#59c9a5] rounded-md hover:opacity-90"
+            >
+              View Statistics
+            </button>
+          )}
         </div>
       </div>
 
@@ -163,6 +201,13 @@ const HiringCycle = () => {
         <StepDetails
           step={selectedStep}
           onClose={() => setSelectedStep(null)}
+        />
+      )}
+
+      {showStatistics && (
+        <ViewStatistics
+          hiringCycle={hiringCycle}
+          onClose={() => setShowStatistics(false)}
         />
       )}
     </div>
