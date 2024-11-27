@@ -169,8 +169,8 @@ const Jobs = ({ userStatus: defaultUserStatus }) => {
       setShowCreateForm(false);
       setJobs(prevJobs => [...prevJobs, newJob]);
 
-      // Redirect to the hiring cycle page
-      navigate(`/hiring-cycles/${hiringCycle.id}`);
+      // Redirect to the hiring cycle details page
+      navigate(`/hiring-cycles/${hiringCycle.id}/details`);
     } catch (error) {
       toast.error('Error creating job: ' + error.message);
       console.error('Error:', error);
