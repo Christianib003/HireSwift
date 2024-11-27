@@ -4,6 +4,8 @@ import { supabase } from '../supabase/supabaseClient';
 import { format } from 'date-fns';
 import { FaCircle, FaLongArrowAltDown, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 const DocumentSubmissionForm = ({ step, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -98,6 +100,17 @@ const ApplicationProgress = () => {
   const [hiringCycle, setHiringCycle] = useState(null);
   const [steps, setSteps] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const { width, height } = useWindowSize();
+
+  const confettiConfig = {
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    recycle: false,
+    numberOfPieces: 500,
+    gravity: 0.3,
+    colors: ['#59c9a5', '#ff8a7a', '#e57cd8', '#2c1338']
+  };
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -167,6 +180,30 @@ const ApplicationProgress = () => {
 
     fetchDetails();
   }, [id]);
+
+  useEffect(() => {
+    const checkIfHired = async () => {
+      try {
+        const finalStep = steps[steps.length - 1];
+        console.log('Final Step:', finalStep);
+        console.log('Application ID:', id);
+        console.log('Is in passed_applications?', finalStep?.passed_applications?.includes(id));
+        console.log('Step name is Decision?', finalStep?.name === "Decision");
+        
+        if (finalStep?.name === "Decision" && finalStep?.passed_applications?.includes(id)) {
+          console.log('Setting celebration to true');
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 3000);
+        }
+      } catch (error) {
+        console.error('Error checking hire status:', error);
+      }
+    };
+
+    if (steps.length > 0) {
+      checkIfHired();
+    }
+  }, [steps, id]);
 
   const handleStartApplication = async () => {
     try {
@@ -339,7 +376,11 @@ const ApplicationProgress = () => {
   };
 
   const isStepActive = (step) => {
-    return step.applications && step.applications.includes(id);
+    return (
+      (step.applications && step.applications.includes(id)) ||
+      (step.passed_applications && step.passed_applications.includes(id)) ||
+      (step.failed_applications && step.failed_applications.includes(id))
+    );
   };
 
   const isStepPassed = (step) => {
@@ -454,19 +495,19 @@ const ApplicationProgress = () => {
                         Minimum Pass Mark: {step.min_pass_mark}%
                       </p>
                     )}
-                    {isStepActive(step) && step.name === "Document Submission" && (
+                    {isStepActive(step) && !isStepPassed(step) && !isStepFailed(step) && step.name === "Document Submission" && (
                       <DocumentSubmissionForm 
                         step={step}
                         onSubmit={handleDocumentSubmission}
                       />
                     )}
-                    {isStepActive(step) && step.name === "Take-home Project" && (
+                    {isStepActive(step) && !isStepPassed(step) && !isStepFailed(step) && step.name === "Take-home Project" && (
                       <TakeHomeProjectForm 
                         step={step}
                         onSubmit={handleMarksSubmission}
                       />
                     )}
-                    {isStepActive(step) && step.name === "Final Interview" && (
+                    {isStepActive(step) && !isStepPassed(step) && !isStepFailed(step) && step.name === "Final Interview" && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                         {application.interview_time ? (
                           <div className="space-y-2">
@@ -488,6 +529,49 @@ const ApplicationProgress = () => {
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             Please wait while the Interview is being scheduled...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {step.name === "Decision" && (isStepActive(step) || isStepPassed(step) || isStepFailed(step)) && (
+                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                        {console.log('Rendering Decision step:', {
+                          step,
+                          id,
+                          isPassed: step.passed_applications?.includes(id),
+                          isFailed: step.failed_applications?.includes(id),
+                          showCelebration
+                        })}
+                        {step.passed_applications?.includes(id) ? (
+                          <div className="text-center space-y-4">
+                            <h4 className="text-xl font-bold text-[#59c9a5]">🎉 Congratulations! 🎉</h4>
+                            <p className="text-gray-600">
+                              We're thrilled to inform you that you've been selected for this position!
+                              Our team will be in touch shortly with the next steps.
+                            </p>
+                            {showCelebration && (
+                              <>
+                                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1000 }}>
+                                  <Confetti {...confettiConfig} />
+                                </div>
+                                <div className="animate-bounce text-4xl">
+                                  🎊 🎯 🌟
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : step.failed_applications?.includes(id) ? (
+                          <div className="text-center space-y-4">
+                            <h4 className="text-xl font-bold text-[#ff8a7a]">Thank You for Your Interest</h4>
+                            <p className="text-gray-600">
+                              We appreciate the time and effort you've invested in this process.
+                              While we've decided to move forward with other candidates,
+                              we encourage you to apply for future positions that match your skills.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center text-gray-600">
+                            <p>Your application is being reviewed for the final decision...</p>
                           </div>
                         )}
                       </div>

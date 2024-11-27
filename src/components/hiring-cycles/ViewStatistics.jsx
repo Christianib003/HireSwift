@@ -4,6 +4,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import Table from '../common/Table';
 import { supabase } from '../../supabase/supabaseClient';
+import { toast } from 'react-toastify';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -111,8 +112,56 @@ const ViewStatistics = ({ hiringCycle, onClose }) => {
   }, [hiringCycle]);
 
   const handleHire = async (applicationId) => {
-    // Hire logic will go here
-    console.log('Hiring application:', applicationId);
+    try {
+      // Get the final step
+      const finalStep = steps[steps.length - 1];
+      const openPositions = job?.open_positions || 0;
+
+      // Add to passed_applications and remove from applications
+      const { error: updateError } = await supabase
+        .from('hiring_cycle_steps')
+        .update({
+          // Remove from applications array
+          applications: (finalStep.applications || [])
+            .filter(id => id !== applicationId),
+          // Add to passed_applications array
+          passed_applications: [...(finalStep.passed_applications || []), applicationId]
+        })
+        .eq('id', finalStep.id);
+
+      if (updateError) throw updateError;
+
+      // Check if we've hired enough people
+      const newPassedCount = (finalStep.passed_applications || []).length + 1;
+      if (newPassedCount === openPositions) {
+        // Move all remaining applications to failed_applications
+        const remainingApps = applications
+          .filter(app => 
+            !finalStep.passed_applications?.includes(app.id) && 
+            app.id !== applicationId
+          )
+          .map(app => app.id);
+
+        // Update failed_applications and clear applications array
+        const { error: failedError } = await supabase
+          .from('hiring_cycle_steps')
+          .update({
+            // Clear applications array
+            applications: [],
+            // Add remaining apps to failed_applications
+            failed_applications: [...(finalStep.failed_applications || []), ...remainingApps]
+          })
+          .eq('id', finalStep.id);
+
+        if (failedError) throw failedError;
+      }
+
+      toast.success('Candidate hired successfully!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error hiring candidate:', error);
+      toast.error('Error hiring candidate');
+    }
   };
 
   const columns = [
@@ -140,6 +189,19 @@ const ViewStatistics = ({ hiringCycle, onClose }) => {
         const openPositions = job?.open_positions || 0;
         const totalApplications = applications.length;
         const canHire = rowIndex < Math.min(openPositions, totalApplications);
+        const finalStep = steps[steps.length - 1];
+        const isHired = finalStep.passed_applications?.includes(row.id);
+
+        if (isHired) {
+          return (
+            <button
+              disabled
+              className="px-3 py-1 text-sm text-white bg-gray-400 rounded cursor-not-allowed"
+            >
+              Hired
+            </button>
+          );
+        }
 
         return canHire ? (
           <button
