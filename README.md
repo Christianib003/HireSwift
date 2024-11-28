@@ -1,5 +1,28 @@
 # HireSwift
 
+<div align="center">
+  <h1><b>HireSwift</b></h1>
+</div>
+
+# 📗 Table of Contents
+
+- [📖 About HireSwift](#about-project)
+- [🛠 Technologies Used](#technologies-used)
+- [📁 Project Structure](#project-structure)
+- [🚀 Live Demo](#live-demo)
+- [💻 Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [✨ Features](#features)
+- [🔧 Development](#development)
+  - [Available Scripts](#available-scripts)
+  - [Code Style](#code-style)
+  - [Styling](#styling)
+- [🔐 Authentication](#authentication)
+- [🏗 Building for Production](#building-for-production)
+- [🤝 Contributing](#contributing)
+- [📝 License](#license)
+
 HireSwift is a modern web application that connects talents with hiring managers, streamlining the job search and hiring process.
 
 ## Technologies Used
@@ -121,3 +144,19 @@ npm run build
 ## License
 
 This project is licensed under the MIT License.
+
+## 🚀 Live Demo <a name="live-demo"></a>
+
+- [Live Demo Link](https://hireswift.netlify.app/)
+- [Video Walkthrough](https://youtu.be/e8HyKVWX2qE)
+
+Credentials for different roles:
+- Admin:
+  - Email: admin.auto@yopmail.com
+  - Password: pass123
+- Hiring Manager:
+  - Email: bravo.auto@yopmail.com
+  - Password: pass123
+- Talent:
+  - Email: alpha.auto@yopmail.com
+  - Password: pass123
